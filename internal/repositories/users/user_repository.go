@@ -24,7 +24,7 @@ func (ur *userRepository) GetUserByID(id string) (*user.User, error) {
 	var u = user.User{}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	err := ur.db.QueryRowContext(ctx, "SELECT * FROM users WHERE id=?", id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.CreatedAt)
+	err := ur.db.QueryRowContext(ctx, "SELECT id, name, email, password, created_at FROM users WHERE id=?", id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
