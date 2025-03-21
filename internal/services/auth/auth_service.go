@@ -2,14 +2,16 @@ package service
 
 import (
 	"errors"
+	service "github.com/SilentPlaces/basicauth.git/internal/services/vault"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/wire"
 	"log"
 	"time"
 )
 
 const (
-	tokenExpireTime        = time.Hour * 72     //72 hours
-	refreshTokenExpireTime = time.Hour * 24 * 7 //7 days
+	tokenExpireTime        = time.Hour * 72     // 72 hours
+	refreshTokenExpireTime = time.Hour * 24 * 7 // 7 days
 )
 
 type (
@@ -40,8 +42,15 @@ type (
 	}
 )
 
-func NewAuthService() AuthService {
-	return &authService{}
+func NewAuthService(vault service.SecureVaultService) AuthService {
+	jwtConfig, err := vault.GetJWTConfig()
+	if err != nil {
+		log.Panic(err)
+	}
+	return &authService{
+		jwtSecret:        jwtConfig.JwtSecret,
+		jwtRefreshSecret: jwtConfig.JwtRefreshSecret,
+	}
 }
 
 func (au *authService) GenerateToken(userId string) (*Tokens, error) {
@@ -82,7 +91,26 @@ func (au *authService) GenerateToken(userId string) (*Tokens, error) {
 }
 
 func (au *authService) ValidateToken(token string) (string, error) {
+	if token == "" {
+		log.Print("ValidateToken: token is empty")
+		return "", errors.New("token is empty")
+	}
 
+	cToken, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+		return au.jwtSecret, nil
+	})
+	if err != nil {
+		log.Printf("ValidateToken: error parsing token: %v", err)
+		return "", err
+	}
+
+	claims, ok := cToken.Claims.(*Claims)
+	if !ok || !cToken.Valid {
+		log.Print("ValidateToken: invalid token")
+		return "", errors.New("invalid token")
+	}
+
+	return claims.UserID, nil
 }
 
 func (au *authService) RefreshToken(token string) (*Tokens, error) {
@@ -107,3 +135,5 @@ func (au *authService) RefreshToken(token string) (*Tokens, error) {
 
 	return au.GenerateToken(refreshClaims.UserID)
 }
+
+var AuthServiceProviderSet = wire.NewSet(NewAuthService)

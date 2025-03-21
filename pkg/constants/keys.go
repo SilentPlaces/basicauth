@@ -23,4 +23,12 @@ const (
 const (
 	EnvKeyConsulAddress = "CONSUL_ADDRESS"
 	EnvKeyConsulScheme  = "CONSUL_SCHEME"
+	EnvKeyVaultAddr     = "VAULT_ADDR"
+	EnvKeyVaultJWTPath  = "VAULT_JWT_PATH"
+	EnvKeyVaultToken    = "VAULT_TOKEN"
+)
+
+const (
+	VaultJWTSecretKey        = "jwtSecret"
+	VaultJWTRefreshSecretKey = "jwtRefreshSecret"
 )

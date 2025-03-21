@@ -1,4 +1,4 @@
 package constants
 
-const EnvFile = "../../.env"
-const MigrationsDirectory = "../../migrations"
+const EnvFile = ".env"
+const MigrationsDirectory = "/migrations"
