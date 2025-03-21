@@ -8,14 +8,22 @@ package main
 
 import (
 	"github.com/SilentPlaces/basicauth.git/internal/config"
+	service2 "github.com/SilentPlaces/basicauth.git/internal/services/auth"
 	"github.com/SilentPlaces/basicauth.git/internal/services/consul"
+	service3 "github.com/SilentPlaces/basicauth.git/internal/services/vault"
 )
 
 // Injectors from wire.go:
 
 // InitializeConsulService initializes a ConsulService using dependencies from config and services packages.
-func InitializeConsulService() *consul.ConsulService {
+func InitializeConsulService() service.ConsulService {
 	appConfig := config.LoadConfig()
-	consulService := consul.NewConsulService(appConfig)
+	consulService := service.NewConsulService(appConfig)
 	return consulService
+}
+
+func InitializeAuthService() service2.AuthService {
+	secureVaultService := service3.NewSecureVaultService()
+	authService := service2.NewAuthService(secureVaultService)
+	return authService
 }
