@@ -17,8 +17,9 @@ const (
 type (
 	AuthService interface {
 		GenerateToken(userId string) (*Tokens, error)
-		ValidateToken(token string) (string, error)
+		ValidateToken(token string) error
 		RefreshToken(token string) (*Tokens, error)
+		ExtractClaims(token string) (*Claims, error)
 	}
 
 	authService struct {
@@ -90,27 +91,49 @@ func (au *authService) GenerateToken(userId string) (*Tokens, error) {
 	}, nil
 }
 
-func (au *authService) ValidateToken(token string) (string, error) {
+func (au *authService) ValidateToken(token string) error {
 	if token == "" {
 		log.Print("ValidateToken: token is empty")
-		return "", errors.New("token is empty")
+		return errors.New("token is empty")
+	}
+
+	// Parse the token without needing to extract the user ID
+	cToken, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+		return au.jwtSecret, nil
+	})
+	if err != nil {
+		log.Printf("ValidateToken: error parsing token: %v", err)
+		return err
+	}
+	if !cToken.Valid {
+		log.Print("ValidateToken: invalid token")
+		return errors.New("invalid token")
+	}
+
+	return nil
+}
+
+func (au *authService) ExtractClaims(token string) (*Claims, error) {
+	if token == "" {
+		log.Print("ExtractClaims: token is empty")
+		return nil, errors.New("token is empty")
 	}
 
 	cToken, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return au.jwtSecret, nil
 	})
 	if err != nil {
-		log.Printf("ValidateToken: error parsing token: %v", err)
-		return "", err
+		log.Printf("ExtractClaims: error parsing token: %v", err)
+		return nil, err
 	}
 
 	claims, ok := cToken.Claims.(*Claims)
 	if !ok || !cToken.Valid {
-		log.Print("ValidateToken: invalid token")
-		return "", errors.New("invalid token")
+		log.Print("ExtractClaims: invalid token")
+		return nil, errors.New("invalid token")
 	}
 
-	return claims.UserID, nil
+	return claims, nil
 }
 
 func (au *authService) RefreshToken(token string) (*Tokens, error) {
