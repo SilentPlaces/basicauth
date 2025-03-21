@@ -10,6 +10,12 @@ services:
       - mysql
       - consul
       - redis
+    environment:
+      #DEVELOPMENT PURPOSE ONLY
+      #DO NOT STORE PRODUCTION VAULT DATA IN DOCKER COMPOSE
+      #DO NOT DO THIS IN PRODUCTION
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root"
     volumes:
       - .:/app
 
