@@ -1,4 +1,4 @@
-package consul
+package service
 
 import (
 	"fmt"
@@ -11,18 +11,25 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 )
 
-type ConsulService struct {
+type ConsulService interface {
+	getConfigValue(key string) (string, error)
+	getConfigForKeys(keys []string) (map[string]string, error)
+	GetMySQLConfig() (map[string]string, error)
+	GetRedisConfig() (map[string]string, error)
+}
+
+type consulService struct {
 	Client *consulapi.Client
 }
 
 var (
-	consulService *ConsulService
-	once          sync.Once
+	service *consulService
+	once    sync.Once
 )
 
 // NewConsulService creates a singleton ConsulService.
 // It panics on error to ensure the application does not continue if the connection fails.
-func NewConsulService(cfg *config.AppConfig) *ConsulService {
+func NewConsulService(cfg *config.AppConfig) ConsulService {
 	once.Do(func() {
 		consulConfig := consulapi.DefaultConfig()
 		consulConfig.Address = cfg.ConsulAddress
@@ -33,13 +40,13 @@ func NewConsulService(cfg *config.AppConfig) *ConsulService {
 			log.Panicf("Error connecting to Consul server: %v", err)
 		}
 
-		consulService = &ConsulService{Client: client}
+		service = &consulService{Client: client}
 	})
-	return consulService
+	return service
 }
 
 // getConfigValue retrieves a single key from Consul's KV store.
-func (cs *ConsulService) getConfigValue(key string) (string, error) {
+func (cs *consulService) getConfigValue(key string) (string, error) {
 	kv := cs.Client.KV()
 	pair, _, err := kv.Get(key, nil)
 	if err != nil {
@@ -52,7 +59,7 @@ func (cs *ConsulService) getConfigValue(key string) (string, error) {
 }
 
 // getConfigForKeys is a function to retrieve multiple configuration values.
-func (cs *ConsulService) getConfigForKeys(keys []string) (map[string]string, error) {
+func (cs *consulService) getConfigForKeys(keys []string) (map[string]string, error) {
 	configMap := make(map[string]string)
 	for _, key := range keys {
 		value, err := cs.getConfigValue(key)
@@ -65,7 +72,7 @@ func (cs *ConsulService) getConfigForKeys(keys []string) (map[string]string, err
 }
 
 // GetMySQLConfig retrieves MySQL configuration from Consul.
-func (cs *ConsulService) GetMySQLConfig() (map[string]string, error) {
+func (cs *consulService) GetMySQLConfig() (map[string]string, error) {
 	keys := []string{
 		constants.MySQLHostKey,
 		constants.MySQLPortKey,
@@ -80,7 +87,7 @@ func (cs *ConsulService) GetMySQLConfig() (map[string]string, error) {
 }
 
 // GetRedisConfig retrieves Redis configuration from Consul.
-func (cs *ConsulService) GetRedisConfig() (map[string]string, error) {
+func (cs *consulService) GetRedisConfig() (map[string]string, error) {
 	keys := []string{
 		constants.RedisHostKey,
 		constants.RedisPortKey,
@@ -89,4 +96,4 @@ func (cs *ConsulService) GetRedisConfig() (map[string]string, error) {
 	return cs.getConfigForKeys(keys)
 }
 
-var ProviderSet = wire.NewSet(NewConsulService)
+var ConsulProviderSet = wire.NewSet(NewConsulService)

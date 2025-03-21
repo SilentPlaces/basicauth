@@ -27,3 +27,4 @@ go.work.sum
 /tmp/
 
 /.idea/
+/cmd/basicauth/tmp/

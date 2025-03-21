@@ -1,7 +1,7 @@
 package config
 
 import (
-	constants2 "github.com/SilentPlaces/basicauth.git/pkg/constants"
+	"github.com/SilentPlaces/basicauth.git/pkg/constants"
 	"log"
 	"os"
 	"sync"
@@ -24,12 +24,12 @@ var (
 // LoadConfig loads configuration from the specified .env file. It is singleton.
 func LoadConfig() *AppConfig {
 	once.Do(func() {
-		if err := godotenv.Load(constants2.EnvFile); err != nil {
+		if err := godotenv.Load(constants.EnvFile); err != nil {
 			log.Panic("Error loading .env file:", err)
 		}
 		appConfig = &AppConfig{
-			ConsulAddress: os.Getenv(constants2.EnvKeyConsulAddress),
-			ConsulScheme:  os.Getenv(constants2.EnvKeyConsulScheme),
+			ConsulAddress: os.Getenv(constants.EnvKeyConsulAddress),
+			ConsulScheme:  os.Getenv(constants.EnvKeyConsulScheme),
 		}
 
 		if appConfig.ConsulAddress == "" || appConfig.ConsulScheme == "" {
