@@ -26,7 +26,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Change working directory to where main.go is placed
-WORKDIR /app/cmd/basicauth
+#WORKDIR /app/cmd/basicauth
 
 # Expose the port your app runs on
 EXPOSE 8080
