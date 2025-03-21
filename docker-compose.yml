@@ -1,0 +1,65 @@
+version: '3.8'
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - consul
+      - redis
+    volumes:
+      - .:/app
+
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: authentication_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: P@ssw0rd!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+
+  consul:
+    image: hashicorp/consul:latest
+    restart: always
+    ports:
+      - "8500:8500"     
+      - "8600:8600/udp"  
+    command: "agent -server -bootstrap -ui -client=0.0.0.0"
+
+  consul-config:
+    image: hashicorp/consul:latest
+    depends_on:
+      - consul
+    environment:
+      - CONSUL_HTTP_ADDR=http://consul:8500
+    entrypoint: /bin/sh
+    command: -c "sleep 7 && \
+      consul kv put config/mysql/host mysql && \
+      consul kv put config/mysql/port 3306 && \
+      consul kv put config/mysql/user user && \
+      consul kv put config/mysql/password P@ssw0rd! && \
+      consul kv put config/mysql/database authentication_db && \
+      consul kv put config/redis/host redis && \
+      consul kv put config/redis/port 6379 && \
+      consul kv put config/redis/password ''"
+      consul kv put config/mysql/connection/maxLifeTime 180
+      consul kv put config/mysql/connection/idleConnections 10
+      consul kv put config/mysql/connection/maxOpenConnections 10
+
+      
+volumes:
+  mysql-data:
