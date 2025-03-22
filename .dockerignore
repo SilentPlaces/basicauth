@@ -1,0 +1,20 @@
+# Exclude version control directories
+.git
+.gitignore
+
+# Exclude IDE configuration files
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Exclude system files
+.DS_Store
+
+# Exclude temporary files and logs
+tmp
+*.log
+
+# Exclude build artifacts (if applicable)
+bin
+out
+
