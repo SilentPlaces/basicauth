@@ -7,7 +7,7 @@ import (
 	"database/sql"
 	config "github.com/SilentPlaces/basicauth.git/internal/config"
 	userController "github.com/SilentPlaces/basicauth.git/internal/controllers/user"
-	"github.com/SilentPlaces/basicauth.git/internal/db"
+	"github.com/SilentPlaces/basicauth.git/internal/db/mysql"
 	userRepository "github.com/SilentPlaces/basicauth.git/internal/repositories/user"
 	auth "github.com/SilentPlaces/basicauth.git/internal/services/auth"
 	consul "github.com/SilentPlaces/basicauth.git/internal/services/consul"
@@ -30,7 +30,7 @@ func InitializeAuthService() auth.AuthService {
 func InitializeMySQLDB() (*sql.DB, error) {
 	wire.Build(
 		InitializeConsulService,
-		db.MySqlProviderSet,
+		mysql.MySqlProviderSet,
 	)
 	return nil, nil
 }

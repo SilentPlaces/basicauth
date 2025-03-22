@@ -10,7 +10,7 @@ import (
 	"database/sql"
 	"github.com/SilentPlaces/basicauth.git/internal/config"
 	"github.com/SilentPlaces/basicauth.git/internal/controllers/user"
-	"github.com/SilentPlaces/basicauth.git/internal/db"
+	"github.com/SilentPlaces/basicauth.git/internal/db/mysql"
 	"github.com/SilentPlaces/basicauth.git/internal/repositories/user"
 	service2 "github.com/SilentPlaces/basicauth.git/internal/services/auth"
 	"github.com/SilentPlaces/basicauth.git/internal/services/consul"
@@ -35,19 +35,19 @@ func InitializeAuthService() service2.AuthService {
 
 func InitializeMySQLDB() (*sql.DB, error) {
 	consulService := InitializeConsulService()
-	sqlDB, err := db.NewMySQLDb(consulService)
+	db, err := mysql.NewMySQLDb(consulService)
 	if err != nil {
 		return nil, err
 	}
-	return sqlDB, nil
+	return db, nil
 }
 
 func InitializeUserService() (service4.UserService, error) {
-	sqlDB, err := InitializeMySQLDB()
+	db, err := InitializeMySQLDB()
 	if err != nil {
 		return nil, err
 	}
-	userRepository := user.NewUserRepository(sqlDB)
+	userRepository := user.NewUserRepository(db)
 	userService := service4.NewUserService(userRepository)
 	return userService, nil
 }
