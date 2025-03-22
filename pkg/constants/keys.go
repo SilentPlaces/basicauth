@@ -27,10 +27,10 @@ const (
 	SMTPPasswordKey = "config/mail/connection/password"
 )
 
-// General config
 const (
-	GeneralDomainKey           = "config/general/domain"
-	GeneralHTTPListenerPortKey = "config/general/httpListenerPort"
+	GeneralDomainKey                                = "config/general/domain"
+	GeneralHTTPListenerPortKey                      = "config/general/httpListenerPort"
+	GeneralRegisterMailVerificationTimeInSecondsKey = "config/general/register/mailVerificationTimeInSeconds"
 )
 
 // Environment variable keys
