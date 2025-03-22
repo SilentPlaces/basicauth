@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"github.com/SilentPlaces/basicauth.git/internal/services/consul"
+	consul "github.com/SilentPlaces/basicauth.git/internal/services/consul"
 	"github.com/SilentPlaces/basicauth.git/pkg/constants"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper"
 	"time"
@@ -12,7 +12,7 @@ import (
 	"github.com/google/wire"
 )
 
-func NewMySQLDb(consulService *consul.ConsulService) (*sql.DB, error) {
+func NewMySQLDb(consulService consul.ConsulService) (*sql.DB, error) {
 	cfg, err := consulService.GetMySQLConfig()
 	if err != nil {
 		return nil, fmt.Errorf("cannot access config: %w", err)
@@ -36,6 +36,7 @@ func NewMySQLDb(consulService *consul.ConsulService) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	//Datasource connection string, sample: user:password@tcp(mysql:3306)/authentication_db?parseTime=true
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, dbName)
 
 	db, dbErr := sql.Open("mysql", dataSourceName)
@@ -54,4 +55,4 @@ func NewMySQLDb(consulService *consul.ConsulService) (*sql.DB, error) {
 
 }
 
-var ProviderSet = wire.NewSet(NewMySQLDb)
+var MySqlProviderSet = wire.NewSet(NewMySQLDb)

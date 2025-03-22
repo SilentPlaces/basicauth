@@ -24,7 +24,8 @@ const (
 	EnvKeyConsulAddress = "CONSUL_ADDRESS"
 	EnvKeyConsulScheme  = "CONSUL_SCHEME"
 	EnvKeyVaultAddr     = "VAULT_ADDR"
-	EnvKeyVaultJWTPath  = "VAULT_JWT_PATH"
+	EnvKeyMountPath     = "VAULT_MOUNT_PATH"
+	EnvKeySecretPath    = "VAULT_SECRET_PATH"
 	EnvKeyVaultToken    = "VAULT_TOKEN"
 )
 

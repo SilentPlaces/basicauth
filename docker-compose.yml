@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build:
@@ -17,11 +16,14 @@ services:
         condition: service_started
       vault-init:
         condition: service_completed_successfully
+      consul-config:
+        condition: service_completed_successfully
     environment:
       # DEVELOPMENT PURPOSE ONLY - DO NOT DO THIS IN PRODUCTION
       VAULT_ADDR: "http://vault:8200"
       VAULT_TOKEN: "root"
-      VAULT_JWT_PATH: "/v1/secret/data/jwt"
+      VAULT_MOUNT_PATH: "secret"
+      VAULT_SECRET_PATH: "jwt"
     volumes:
       - .:/app
   mysql:
@@ -31,16 +33,17 @@ services:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: authentication_db
       MYSQL_USER: user
-      MYSQL_PASSWORD: P@ssw0rd!
+      MYSQL_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
 
   redis:
     image: redis:latest
@@ -73,18 +76,21 @@ services:
     environment:
       - CONSUL_HTTP_ADDR=http://consul:8500
     entrypoint: /bin/sh
-    command: -c "sleep 7 && \
+    command: -c "sleep 5 && \
       consul kv put config/mysql/host mysql && \
-      consul kv put config/mysql/port 3306 && \
       consul kv put config/mysql/user user && \
-      consul kv put config/mysql/password P@ssw0rd! && \
-      consul kv put config/mysql/database authentication_db && \
-      consul kv put config/redis/host redis && \
-      consul kv put config/redis/port 6379 && \
-      consul kv put config/redis/password '' && \
+      consul kv put config/mysql/port 3306 && \
+      consul kv put config/mysql/password password && \
+      consul kv put config/mysql/db authentication_db && \
+      
       consul kv put config/mysql/connection/maxLifeTime 180 && \
       consul kv put config/mysql/connection/idleConnections 10 && \
       consul kv put config/mysql/connection/maxOpenConnections 10"
+      
+      consul kv put config/redis/host redis && \
+      consul kv put config/redis/port 6379 && \
+      consul kv put config/redis/password '' && \
+
 
   vault:
     image: hashicorp/vault:latest

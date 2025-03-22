@@ -4,9 +4,14 @@
 package main
 
 import (
+	"database/sql"
 	config "github.com/SilentPlaces/basicauth.git/internal/config"
+	userController "github.com/SilentPlaces/basicauth.git/internal/controllers/user"
+	"github.com/SilentPlaces/basicauth.git/internal/db"
+	userRepository "github.com/SilentPlaces/basicauth.git/internal/repositories/user"
 	auth "github.com/SilentPlaces/basicauth.git/internal/services/auth"
 	consul "github.com/SilentPlaces/basicauth.git/internal/services/consul"
+	userService "github.com/SilentPlaces/basicauth.git/internal/services/users"
 	vault "github.com/SilentPlaces/basicauth.git/internal/services/vault"
 	"github.com/google/wire"
 )
@@ -20,4 +25,29 @@ func InitializeConsulService() consul.ConsulService {
 func InitializeAuthService() auth.AuthService {
 	wire.Build(auth.AuthServiceProviderSet, vault.VaultServiceProviderSet)
 	return nil
+}
+
+func InitializeMySQLDB() (*sql.DB, error) {
+	wire.Build(
+		InitializeConsulService,
+		db.MySqlProviderSet,
+	)
+	return nil, nil
+}
+
+func InitializeUserService() (userService.UserService, error) {
+	wire.Build(
+		userRepository.UserRepositoryProviderSet,
+		userService.UserServiceProviderSet,
+		InitializeMySQLDB,
+	)
+	return nil, nil
+}
+
+func InitializeUserController() (userController.UserController, error) {
+	wire.Build(
+		InitializeUserService,
+		userController.UserControllerProviderSet,
+	)
+	return nil, nil
 }

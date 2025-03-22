@@ -10,7 +10,7 @@ echo "MySQL is up!"
 
 echo "Running goose migrations..."
 
-goose -dir /app/migrations mysql "user:P@ssw0rd!@tcp(mysql:3306)/authentication_db" up
+goose -dir /app/migrations mysql "user:password@tcp(mysql:3306)/authentication_db" up
 
 echo "Starting air..."
 exec air

@@ -51,17 +51,16 @@ func NewSecureVaultService() SecureVaultService {
 	return service
 }
 func (s *vaultService) GetJWTConfig() (*VaultJWTSecretConfig, error) {
-	path := os.Getenv(constants.EnvKeyVaultJWTPath)
-	fmt.Println("####################", path)
-
-	secret, err := s.client.KVv2("secret").Get(context.Background(), "jwt")
+	mountPath := os.Getenv(constants.EnvKeyMountPath)
+	secretPath := os.Getenv(constants.EnvKeySecretPath)
+	secret, err := s.client.KVv2(mountPath).Get(context.Background(), secretPath)
 
 	if err != nil {
-		log.Printf("Error reading secret from Vault at %s: %v", path, err)
+		log.Printf("Error reading secret from Vault at %s: %v", mountPath, err)
 		return nil, fmt.Errorf("unable to read secret from Vault: %w", err)
 	}
 	if secret == nil || secret.Data == nil {
-		err := errors.New("no data found at the provided path")
+		err := errors.New("no data found at the provided mountPath")
 		log.Printf("Error: %v", err)
 		return nil, err
 	}
