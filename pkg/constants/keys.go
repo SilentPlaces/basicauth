@@ -19,12 +19,18 @@ const (
 	RedisPasswordKey = "config/redis/connection/password"
 )
 
-// config for smtp server
+// config for mail server
 const (
-	SMTPHostKey     = "config/smtp/connection/host"
-	SMTPPortKey     = "config/smtp/connection/port"
-	SMTPUsernameKey = "config/smtp/connection/username"
-	SMTPPasswordKey = "config/smtp/connection/password"
+	SMTPHostKey     = "config/mail/connection/host"
+	SMTPPortKey     = "config/mail/connection/port"
+	SMTPUsernameKey = "config/mail/connection/username"
+	SMTPPasswordKey = "config/mail/connection/password"
+)
+
+// General config
+const (
+	GeneralDomainKey           = "config/general/domain"
+	GeneralHTTPListenerPortKey = "config/general/httpListenerPort"
 )
 
 // Environment variable keys

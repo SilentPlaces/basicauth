@@ -53,7 +53,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -66,7 +66,7 @@ services:
       - "8600:8600/udp"
     command: "agent -server -bootstrap -ui -client=0.0.0.0"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8500/v1/status/leader"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8500/v1/status/leader" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -79,7 +79,7 @@ services:
       - CONSUL_HTTP_ADDR=http://consul:8500
     entrypoint: /bin/sh
     command: -c "sleep 5 && \
-      #MySQL Connection
+      # MySQL Connection settings
       consul kv put config/mysql/connection/host mysql && \
       consul kv put config/mysql/connection/user user && \
       consul kv put config/mysql/connection/port 3306 && \
@@ -87,25 +87,22 @@ services:
       consul kv put config/mysql/connection/db authentication_db && \
       consul kv put config/mysql/connection/maxLifeTime 180 && \
       consul kv put config/mysql/connection/idleConnections 10 && \
-      consul kv put config/mysql/connection/maxOpenConnections 10" && \
-      #redis
+      consul kv put config/mysql/connection/maxOpenConnections 10 && \
+      \
+      # Redis connection details
       consul kv put config/redis/connection/host redis && \
       consul kv put config/redis/connection/port 6379 && \
       consul kv put config/redis/connection/password '' && \
-      #SMTP server
-      consul kv put config/smtp/connection/host mailhog && \
-      consul kv put config/smtp/connection/port 1025 && \
-      consul kv put config/smtp/connection/username '' && \
-      consul kv put config/smtp/connection/password ''
-
-
-
-    smtpHost := "smtp.example.com"
-    smtpPort := "587"
-    username := "your_username@example.com"
-    password := "your_password"
-
-
+      \
+      # SMTP server configuration
+      consul kv put config/mail/connection/host mailhog && \
+      consul kv put config/mail/connection/port 1025 && \
+      consul kv put config/mail/connection/username '' && \
+      consul kv put config/mail/connection/password ''" && \
+      \
+      #General configuration
+      consul kv put config/general/domain 'localhost' && \
+      consul kv put config/general/httpListenerPort 8080
 
 
   vault:
@@ -145,7 +142,7 @@ services:
       VAULT_TOKEN: "root"
     restart: "no"
     healthcheck:
-      test: ["CMD-SHELL", "exit 0"]
+      test: [ "CMD-SHELL", "exit 0" ]
       interval: 5s
       timeout: 2s
       retries: 1
