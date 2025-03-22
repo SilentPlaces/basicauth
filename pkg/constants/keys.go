@@ -2,11 +2,11 @@ package constants
 
 // MySQL configuration keys in Consul
 const (
-	MySQLHostKey               = "config/mysql/host"
-	MySQLPortKey               = "config/mysql/port"
-	MySQLUserKey               = "config/mysql/user"
-	MySQLPasswordKey           = "config/mysql/password"
-	MySQLDBKey                 = "config/mysql/db"
+	MySQLHostKey               = "config/mysql/connection/host"
+	MySQLPortKey               = "config/mysql/connection/port"
+	MySQLUserKey               = "config/mysql/connection/user"
+	MySQLPasswordKey           = "config/mysql/connection/password"
+	MySQLDBKey                 = "config/mysql/connection/db"
 	MySQLMaxLifetimeSecondsKey = "config/mysql/connection/maxLifeTime"
 	MySQLIdleConnectionsKey    = "config/mysql/connection/idleConnections"
 	MySQLMaxOpenConnectionsKey = "config/mysql/connection/maxOpenConnections"
@@ -14,9 +14,17 @@ const (
 
 // Redis configuration keys in Consul
 const (
-	RedisHostKey     = "config/redis/host"
-	RedisPortKey     = "config/redis/port"
-	RedisPasswordKey = "config/redis/password"
+	RedisHostKey     = "config/redis/connection/host"
+	RedisPortKey     = "config/redis/connection/port"
+	RedisPasswordKey = "config/redis/connection/password"
+)
+
+// config for smtp server
+const (
+	SMTPHostKey     = "config/smtp/connection/host"
+	SMTPPortKey     = "config/smtp/connection/port"
+	SMTPUsernameKey = "config/smtp/connection/username"
+	SMTPPasswordKey = "config/smtp/connection/password"
 )
 
 // Environment variable keys

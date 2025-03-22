@@ -16,6 +16,7 @@ type ConsulService interface {
 	getConfigForKeys(keys []string) (map[string]string, error)
 	GetMySQLConfig() (map[string]string, error)
 	GetRedisConfig() (map[string]string, error)
+	GetSMTPConfig() (map[string]string, error)
 }
 
 type consulService struct {
@@ -92,6 +93,17 @@ func (cs *consulService) GetRedisConfig() (map[string]string, error) {
 		constants.RedisHostKey,
 		constants.RedisPortKey,
 		constants.RedisPasswordKey,
+	}
+	return cs.getConfigForKeys(keys)
+}
+
+// GetSMTPConfig retrieves SMTP Server config from cunsol
+func (cs *consulService) GetSMTPConfig() (map[string]string, error) {
+	keys := []string{
+		constants.SMTPHostKey,
+		constants.SMTPPortKey,
+		constants.SMTPUsernameKey,
+		constants.SMTPPasswordKey,
 	}
 	return cs.getConfigForKeys(keys)
 }
