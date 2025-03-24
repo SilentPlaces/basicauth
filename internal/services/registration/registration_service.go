@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	repository "github.com/SilentPlaces/basicauth.git/internal/repositories/verification"
+	repository "github.com/SilentPlaces/basicauth.git/internal/repositories/registration"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
@@ -10,24 +10,24 @@ import (
 )
 
 type (
-	UserVerificationService interface {
+	RegistrationService interface {
 		GenerateVerificationToken(email string) (string, error)
 		VerifyToken(email, token string) error
 	}
 
-	userVerificationService struct {
-		verificationRepo repository.VerificationRepository
+	registrationService struct {
+		verificationRepo repository.RegistrationRepository
 	}
 )
 
-func NewUserVerificationService(verificationRepo repository.VerificationRepository) UserVerificationService {
+func NewUserVerificationService(verificationRepo repository.RegistrationRepository) RegistrationService {
 
-	return &userVerificationService{
+	return &registrationService{
 		verificationRepo: verificationRepo,
 	}
 }
 
-func (s *userVerificationService) GenerateVerificationToken(email string) (string, error) {
+func (s *registrationService) GenerateVerificationToken(email string) (string, error) {
 	//generate token
 	token, err := helpers.GenerateRandomString(256)
 	if err != nil {
@@ -43,7 +43,7 @@ func (s *userVerificationService) GenerateVerificationToken(email string) (strin
 	return token, nil
 }
 
-func (s *userVerificationService) VerifyToken(email, token string) error {
+func (s *registrationService) VerifyToken(email, token string) error {
 	result, err := s.verificationRepo.GetVerifyToken(email)
 	if errors.Is(err, redis.Nil) {
 		return errors.New("token does not exist")

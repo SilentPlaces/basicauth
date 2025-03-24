@@ -10,54 +10,54 @@ import (
 )
 
 type (
-	VerificationRepository interface {
+	RegistrationRepository interface {
 		SetVerifyToken(mail string, token string) error
 		GetVerifyToken(mail string) (string, error)
 		DeleteToken(email string) error
 	}
 
-	verificationRepository struct {
+	registrationRepository struct {
 		redisClient        *redis.Client
 		tokenExpirySeconds time.Duration
 	}
 )
 
-func NewVerificationRepository(redisClient *redis.Client, consul consul.ConsulService) VerificationRepository {
+func NewVerificationRepository(redisClient *redis.Client, consul consul.ConsulService) RegistrationRepository {
 	cfg, err := consul.GetRegistrationConfig()
 	var expireTime = 24 * time.Hour
 	if err == nil {
 		expireTime = cfg.MailVerificationTimeInSeconds
 	}
 
-	return &verificationRepository{
+	return &registrationRepository{
 		redisClient:        redisClient,
 		tokenExpirySeconds: expireTime,
 	}
 }
 
-func (v *verificationRepository) SetVerifyToken(mail string, token string) error {
+func (v *registrationRepository) SetVerifyToken(mail string, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err := v.redisClient.Set(ctx, mail, token, v.tokenExpirySeconds).Err()
 	if err != nil {
-		log.Printf("Failed to set verification token for mail '%s': %v", mail, err)
+		log.Printf("Failed to set registration token for mail '%s': %v", mail, err)
 		return err
 	}
 	return nil
 }
 
-func (v *verificationRepository) GetVerifyToken(mail string) (string, error) {
+func (v *registrationRepository) GetVerifyToken(mail string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	token, err := v.redisClient.Get(ctx, mail).Result()
 	if err != nil {
-		log.Printf("Failed to get verification token for mail '%s': %v", mail, err)
+		log.Printf("Failed to get registration token for mail '%s': %v", mail, err)
 		return "", err
 	}
 	return token, nil
 }
 
-func (v *verificationRepository) DeleteToken(email string) error {
+func (v *registrationRepository) DeleteToken(email string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err := v.redisClient.Del(ctx, email).Err()
