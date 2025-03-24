@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	consulService "github.com/SilentPlaces/basicauth.git/internal/services/consul"
-	"github.com/SilentPlaces/basicauth.git/pkg/constants"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 	"time"
@@ -16,9 +15,9 @@ func NewRedis(consul consulService.ConsulService) (*redis.Client, error) {
 		return nil, err
 	}
 
-	host := cfg[constants.RedisHostKey]
-	port := cfg[constants.RedisPortKey]
-	password := cfg[constants.RedisPasswordKey]
+	host := cfg.Host
+	port := cfg.Port
+	password := cfg.Password
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", host, port),

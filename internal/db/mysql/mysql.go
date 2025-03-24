@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	consul "github.com/SilentPlaces/basicauth.git/internal/services/consul"
-	"github.com/SilentPlaces/basicauth.git/pkg/constants"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper"
 	"time"
 
@@ -18,25 +17,26 @@ func NewMySQLDb(consulService consul.ConsulService) (*sql.DB, error) {
 		return nil, fmt.Errorf("cannot access config: %w", err)
 	}
 
-	user := cfg[constants.MySQLUserKey]
-	password := cfg[constants.MySQLPasswordKey]
-	host := cfg[constants.MySQLHostKey]
-	port := cfg[constants.MySQLPortKey]
-	dbName := cfg[constants.MySQLDBKey]
+	user := cfg.User
+	password := cfg.Password
+	host := cfg.Host
+	port := cfg.Port
+	dbName := cfg.DB
 
-	lifeTimeInt, err := helpers.ParseInt("max lifetime", cfg[constants.MySQLMaxLifetimeSecondsKey])
+	lifeTimeInt, err := helpers.ParseInt("max lifetime", cfg.MaxLifetimeSeconds)
 	if err != nil {
 		return nil, err
 	}
-	maxOpenConn, err := helpers.ParseInt("max open connections", cfg[constants.MySQLMaxOpenConnectionsKey])
+	maxOpenConn, err := helpers.ParseInt("max open connections", cfg.MaxOpenConnections)
 	if err != nil {
 		return nil, err
 	}
-	maxIdleConn, err := helpers.ParseInt("max idle connections", cfg[constants.MySQLIdleConnectionsKey])
+	maxIdleConn, err := helpers.ParseInt("max idle connections", cfg.IdleConnections)
 	if err != nil {
 		return nil, err
 	}
-	//Datasource connection string, sample: user:password@tcp(mysql:3306)/authentication_db?parseTime=true
+
+	// Datasource connection string: user:password@tcp(host:port)/dbname?parseTime=true
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, dbName)
 
 	db, dbErr := sql.Open("mysql", dataSourceName)
@@ -52,7 +52,6 @@ func NewMySQLDb(consulService consul.ConsulService) (*sql.DB, error) {
 		return nil, pingErr
 	}
 	return db, nil
-
 }
 
 var MySqlProviderSet = wire.NewSet(NewMySQLDb)

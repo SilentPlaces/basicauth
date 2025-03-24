@@ -98,7 +98,7 @@ services:
       consul kv put config/mail/connection/host mailhog && \
       consul kv put config/mail/connection/port 1025 && \
       consul kv put config/mail/connection/username '' && \
-      consul kv put config/mail/connection/password ''" && \
+      consul kv put config/mail/connection/password '' && \
       \
       #General configuration
       consul kv put config/general/domain 'localhost' && \
