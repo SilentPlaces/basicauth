@@ -76,7 +76,7 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 	}
 
 	// Generate verification URL and email body
-	verificationUrl := fmt.Sprintf("https://%s/?token=%s&email=%s", rc.generalConfig.Domain, token, requestData.Email)
+	verificationUrl := fmt.Sprintf("https://%s/?%s=%s&%s=%s", rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
 	emailBody := fmt.Sprintf(rc.registrationConfig.VerificationMailText, verificationUrl)
 	emailSubject := fmt.Sprintf("Registration Verification Email at %s", rc.generalConfig.Domain)
 
@@ -114,5 +114,10 @@ func validateRequestData(requestData registeration_dto.SignUpRequestDTO, passwor
 func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	http.Error(w, "Not implemented", http.StatusNotImplemented)
 }
+
+const (
+	queryParamMailKey  = "email"
+	queryParamTokenKey = "token"
+)
 
 var RegistrationControllerProvider = wire.NewSet(NewRegistrationController)
