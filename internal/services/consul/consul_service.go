@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper"
+	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/convertor"
 	"log"
 	"sync"
 	"time"
@@ -13,49 +13,16 @@ import (
 	consulapi "github.com/hashicorp/consul/api"
 )
 
-// Configuration Structs
-type MySQLConfig struct {
-	Host               string
-	Port               string
-	User               string
-	Password           string
-	DB                 string
-	MaxLifetimeSeconds string
-	MaxOpenConnections string
-	IdleConnections    string
-}
-
-type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-}
-
-type SMTPConfig struct {
-	Host     string
-	Port     string
-	Username string
-	Password string
-}
-
-type GeneralConfig struct {
-	Domain           string
-	HTTPListenerPort string
-}
-
-type RegistrationConfig struct {
-	MailVerificationTimeInSeconds time.Duration
-}
-
 // ConsulService interface updated to return dedicated config structs.
 type ConsulService interface {
 	getConfigValue(key string) (string, error)
 	getConfigForKeys(keys []string) (map[string]string, error)
-	GetMySQLConfig() (*MySQLConfig, error)
-	GetRedisConfig() (*RedisConfig, error)
-	GetSMTPConfig() (*SMTPConfig, error)
-	GetGeneralConfig() (*GeneralConfig, error)
-	GetRegistrationConfig() (*RegistrationConfig, error)
+	GetMySQLConfig() (*config.MySQLConfig, error)
+	GetRedisConfig() (*config.RedisConfig, error)
+	GetSMTPConfig() (*config.SMTPConfig, error)
+	GetGeneralConfig() (*config.GeneralConfig, error)
+	GetRegistrationConfig() *config.RegistrationConfig
+	GetRegistrationPasswordConfig() *config.RegistrationPasswordConfig
 }
 
 type consulService struct {
@@ -111,7 +78,7 @@ func (cs *consulService) getConfigForKeys(keys []string) (map[string]string, err
 }
 
 // GetMySQLConfig retrieves MySQL configuration from Consul.
-func (cs *consulService) GetMySQLConfig() (*MySQLConfig, error) {
+func (cs *consulService) GetMySQLConfig() (*config.MySQLConfig, error) {
 	keys := []string{
 		constants.MySQLHostKey,
 		constants.MySQLPortKey,
@@ -126,7 +93,7 @@ func (cs *consulService) GetMySQLConfig() (*MySQLConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg := &MySQLConfig{
+	cfg := &config.MySQLConfig{
 		Host:               configMap[constants.MySQLHostKey],
 		Port:               configMap[constants.MySQLPortKey],
 		User:               configMap[constants.MySQLUserKey],
@@ -140,7 +107,7 @@ func (cs *consulService) GetMySQLConfig() (*MySQLConfig, error) {
 }
 
 // GetRedisConfig retrieves Redis configuration from Consul.
-func (cs *consulService) GetRedisConfig() (*RedisConfig, error) {
+func (cs *consulService) GetRedisConfig() (*config.RedisConfig, error) {
 	keys := []string{
 		constants.RedisHostKey,
 		constants.RedisPortKey,
@@ -150,7 +117,7 @@ func (cs *consulService) GetRedisConfig() (*RedisConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg := &RedisConfig{
+	cfg := &config.RedisConfig{
 		Host:     configMap[constants.RedisHostKey],
 		Port:     configMap[constants.RedisPortKey],
 		Password: configMap[constants.RedisPasswordKey],
@@ -159,7 +126,7 @@ func (cs *consulService) GetRedisConfig() (*RedisConfig, error) {
 }
 
 // GetSMTPConfig retrieves SMTP configuration from Consul.
-func (cs *consulService) GetSMTPConfig() (*SMTPConfig, error) {
+func (cs *consulService) GetSMTPConfig() (*config.SMTPConfig, error) {
 	keys := []string{
 		constants.SMTPHostKey,
 		constants.SMTPPortKey,
@@ -170,7 +137,7 @@ func (cs *consulService) GetSMTPConfig() (*SMTPConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg := &SMTPConfig{
+	cfg := &config.SMTPConfig{
 		Host:     configMap[constants.SMTPHostKey],
 		Port:     configMap[constants.SMTPPortKey],
 		Username: configMap[constants.SMTPUsernameKey],
@@ -180,7 +147,7 @@ func (cs *consulService) GetSMTPConfig() (*SMTPConfig, error) {
 }
 
 // GetGeneralConfig retrieves general application configuration from Consul.
-func (cs *consulService) GetGeneralConfig() (*GeneralConfig, error) {
+func (cs *consulService) GetGeneralConfig() (*config.GeneralConfig, error) {
 	keys := []string{
 		constants.GeneralDomainKey,
 		constants.GeneralHTTPListenerPortKey,
@@ -189,7 +156,7 @@ func (cs *consulService) GetGeneralConfig() (*GeneralConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg := &GeneralConfig{
+	cfg := &config.GeneralConfig{
 		Domain:           configMap[constants.GeneralDomainKey],
 		HTTPListenerPort: configMap[constants.GeneralHTTPListenerPortKey],
 	}
@@ -197,28 +164,63 @@ func (cs *consulService) GetGeneralConfig() (*GeneralConfig, error) {
 }
 
 // GetRegistrationConfig retrieves registration configuration from Consul.
-func (cs *consulService) GetRegistrationConfig() (*RegistrationConfig, error) {
+func (cs *consulService) GetRegistrationConfig() *config.RegistrationConfig {
 	keys := []string{
 		constants.GeneralRegisterMailVerificationTimeInSecondsKey,
+		constants.GeneralRegisterHostVerificationMailAddressKey,
+		constants.GeneralRegisterVerificationMailTextKey,
 	}
+	defaultTokenExpirySeconds := 600
+	tokenExpirySeconds := defaultTokenExpirySeconds
+
 	configMap, err := cs.getConfigForKeys(keys)
-	if err != nil {
-		return nil, err
-	}
-	var tokenExpirySeconds int
-	if err != nil {
-		tokenExpirySeconds = 6000
-	} else {
-		tokenExpirySeconds, err = helpers.ParseInt("token expireTime",
-			configMap[constants.GeneralRegisterMailVerificationTimeInSecondsKey])
-		if err != nil {
-			tokenExpirySeconds = 6000
+	if err == nil {
+		if val, err := helpers.ParseInt("token expireTime", configMap[constants.GeneralRegisterMailVerificationTimeInSecondsKey]); err == nil {
+			tokenExpirySeconds = val
 		}
 	}
-	cfg := &RegistrationConfig{
+
+	return &config.RegistrationConfig{
 		MailVerificationTimeInSeconds: time.Duration(tokenExpirySeconds),
+		HostVerificationMailAddress:   configMap[constants.GeneralRegisterHostVerificationMailAddressKey],
+		VerificationMailText:          configMap[constants.GeneralRegisterVerificationMailTextKey],
 	}
-	return cfg, nil
+}
+
+// GetRegistrationPasswordConfig retrieves and parses the registration password configuration from Consul.
+func (cs *consulService) GetRegistrationPasswordConfig() *config.RegistrationPasswordConfig {
+	keys := []string{
+		constants.KeyRegistrationPasswordMinLength,
+		constants.KeyRegistrationPasswordRequireUpper,
+		constants.KeyRegistrationPasswordRequireLower,
+		constants.KeyRegistrationPasswordRequireNumber,
+		constants.KeyRegistrationPasswordRequireSpecial,
+	}
+
+	configMap, err := cs.getConfigForKeys(keys)
+	if err != nil {
+		return nil
+	}
+
+	minLength, err := helpers.ParseInt("minLength", configMap[constants.KeyRegistrationPasswordMinLength])
+	if err != nil {
+		minLength = 8
+	}
+
+	parseBool := func(key, fieldName string) bool {
+		if v, err := helpers.ParseBool(fieldName, configMap[key]); err == nil {
+			return v
+		}
+		return false
+	}
+
+	return &config.RegistrationPasswordConfig{
+		MinLength:      minLength,
+		RequireUpper:   parseBool(constants.KeyRegistrationPasswordRequireUpper, "requireUpper"),
+		RequireLower:   parseBool(constants.KeyRegistrationPasswordRequireLower, "requireLower"),
+		RequireNumber:  parseBool(constants.KeyRegistrationPasswordRequireNumber, "requireNumber"),
+		RequireSpecial: parseBool(constants.KeyRegistrationPasswordRequireSpecial, "requireSpecial"),
+	}
 }
 
 var ConsulProviderSet = wire.NewSet(NewConsulService)

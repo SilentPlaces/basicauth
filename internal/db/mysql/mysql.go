@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	consul "github.com/SilentPlaces/basicauth.git/internal/services/consul"
-	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper"
+	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/convertor"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"

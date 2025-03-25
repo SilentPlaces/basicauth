@@ -19,6 +19,7 @@ services:
       consul-config:
         condition: service_completed_successfully
     environment:
+      APP_ENV: "development"
       # DEVELOPMENT PURPOSE ONLY - DO NOT DO THIS IN PRODUCTION
       VAULT_ADDR: "http://vault:8200"
       VAULT_TOKEN: "root"
@@ -72,38 +73,51 @@ services:
       retries: 5
 
   consul-config:
-    image: hashicorp/consul:latest
+    image: hashicorp/consul:1.16.1
     depends_on:
       - consul
     environment:
       - CONSUL_HTTP_ADDR=http://consul:8500
     entrypoint: /bin/sh
-    command: -c "sleep 5 && \
-      # MySQL Connection settings
-      consul kv put config/mysql/connection/host mysql && \
-      consul kv put config/mysql/connection/user user && \
-      consul kv put config/mysql/connection/port 3306 && \
-      consul kv put config/mysql/connection/password password && \
-      consul kv put config/mysql/connection/db authentication_db && \
-      consul kv put config/mysql/connection/maxLifeTime 180 && \
-      consul kv put config/mysql/connection/idleConnections 10 && \
-      consul kv put config/mysql/connection/maxOpenConnections 10 && \
-      \
-      # Redis connection details
-      consul kv put config/redis/connection/host redis && \
-      consul kv put config/redis/connection/port 6379 && \
-      consul kv put config/redis/connection/password '' && \
-      \
-      # SMTP server configuration
-      consul kv put config/mail/connection/host mailhog && \
-      consul kv put config/mail/connection/port 1025 && \
-      consul kv put config/mail/connection/username '' && \
-      consul kv put config/mail/connection/password '' && \
-      \
-      #General configuration
-      consul kv put config/general/domain 'localhost' && \
-      consul kv put config/general/httpListenerPort 8080 && \
-      consul kv put config/general/register/mailVerificationTimeInSeconds 6000
+    command:
+      - -c
+      - |
+        sleep 5 && \
+        # MySQL Connection settings && \
+        consul kv put config/mysql/connection/host mysql && \
+        consul kv put config/mysql/connection/user user && \
+        consul kv put config/mysql/connection/port 3306 && \
+        consul kv put config/mysql/connection/password password && \
+        consul kv put config/mysql/connection/db authentication_db && \
+        consul kv put config/mysql/connection/maxLifeTime 180 && \
+        consul kv put config/mysql/connection/idleConnections 10 && \
+        consul kv put config/mysql/connection/maxOpenConnections 10 && \
+        \
+        # Redis connection details && \
+        consul kv put config/redis/connection/host redis && \
+        consul kv put config/redis/connection/port 6379 && \
+        consul kv put config/redis/connection/password '' && \
+        \
+        # SMTP server configuration && \
+        consul kv put config/mail/connection/host mailhog && \
+        consul kv put config/mail/connection/port 1025 && \
+        consul kv put config/mail/connection/username '' && \
+        consul kv put config/mail/connection/password '' && \
+        \
+        # General configuration && \
+        consul kv put config/general/domain 'localhost' && \
+        consul kv put config/general/httpListenerPort 8080 && \
+        consul kv put config/general/register/mailVerificationTimeInSeconds 6000 && \
+        consul kv put config/general/register/hostVerificationMailAddress 'armin@testlocalhost.com' && \
+        consul kv put config/general/register/verificationMailText "<html><body><h2>Welcome to Our Service!</h2><p>Please click the link below to verify your email address:</p><p><a href=\"%s\">Verify Your Email</a></p><p>If you didn\'t request this, you can ignore this email.</p></body></html>" && /
+        \
+        # Registration password configuration && \
+        consul kv put config/registration/password/minLength 8 && \
+        consul kv put config/registration/password/requireUpper false && \
+        consul kv put config/registration/password/requireLower false && \
+        consul kv put config/registration/password/requireNumber false && \
+        consul kv put config/registration/password/requireSpecial false
+
 
 
   vault:

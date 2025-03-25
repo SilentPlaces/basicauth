@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"github.com/SilentPlaces/basicauth.git/internal/models/models"
 	repository "github.com/SilentPlaces/basicauth.git/internal/repositories/registration"
-	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper"
+	userRepo "github.com/SilentPlaces/basicauth.git/internal/repositories/user"
+	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/strings"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 	"log"
@@ -11,40 +13,67 @@ import (
 
 type (
 	RegistrationService interface {
-		GenerateVerificationToken(email string) (string, error)
+		Signup(email string, name string, password string) (string, error) //sign up user and generate verification token
 		VerifyToken(email, token string) error
 	}
 
 	registrationService struct {
-		verificationRepo repository.RegistrationRepository
+		registrationRepository repository.RegistrationRepository
+		userRepository         userRepo.UserRepository
 	}
 )
 
-func NewUserVerificationService(verificationRepo repository.RegistrationRepository) RegistrationService {
-
+func NewUserRegistrationService(verificationRepo repository.RegistrationRepository, userRepository userRepo.UserRepository) RegistrationService {
 	return &registrationService{
-		verificationRepo: verificationRepo,
+		registrationRepository: verificationRepo,
+		userRepository:         userRepository,
 	}
 }
 
-func (s *registrationService) GenerateVerificationToken(email string) (string, error) {
-	//generate token
-	token, err := helpers.GenerateRandomString(256)
+// Signup do the logic of sign up user in out system
+func (s *registrationService) Signup(email string, name string, password string) (string, error) {
+	// Check if the user already exists by email
+	existingUser, err := s.userRepository.GetUserByMail(email)
+	if err != nil {
+		log.Printf("Error getting user by mail: %v", err)
+		// Return an error if the user exists
+		if existingUser != nil {
+			return "", errors.New("this email is already in use, please login")
+		}
+		return "", err
+	}
+
+	// Insert the new user
+	dbUser, err := s.userRepository.InsertUser(models.User{
+		Name:     name,
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	// Generate verification token
+	token, err := helpers.GenerateRandomString(64)
 	if err != nil {
 		log.Printf("Error generating token: %s", err.Error())
 		return "", err
 	}
-	//save token to redis
-	err = s.verificationRepo.SetVerifyToken(email, token)
+
+	// Save token to Redis
+	err = s.registrationRepository.SetVerifyToken(email, token)
 	if err != nil {
+		_ = s.userRepository.DeleteUserByID(dbUser.ID) // Rollback by deleting user
 		log.Println(err)
 		return "", err
 	}
+
+	// Return the generated token
 	return token, nil
 }
 
 func (s *registrationService) VerifyToken(email, token string) error {
-	result, err := s.verificationRepo.GetVerifyToken(email)
+	result, err := s.registrationRepository.GetVerifyToken(email)
 	if errors.Is(err, redis.Nil) {
 		return errors.New("token does not exist")
 	} else if err != nil {
@@ -55,11 +84,11 @@ func (s *registrationService) VerifyToken(email, token string) error {
 		return errors.New("token does not match")
 	}
 
-	err = s.verificationRepo.DeleteToken(email)
+	err = s.registrationRepository.DeleteToken(email)
 	if err != nil {
 		log.Printf("Error deleting token: %s", err.Error())
 	}
 	return nil
 }
 
-var UserVerificationServiceProvider = wire.NewSet(NewUserVerificationService)
+var UserRegistrationServiceProvider = wire.NewSet(NewUserRegistrationService)

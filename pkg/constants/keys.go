@@ -19,7 +19,7 @@ const (
 	RedisPasswordKey = "config/redis/connection/password"
 )
 
-// config for mail server
+// Mail Server config keus
 const (
 	SMTPHostKey     = "config/mail/connection/host"
 	SMTPPortKey     = "config/mail/connection/port"
@@ -27,22 +27,36 @@ const (
 	SMTPPasswordKey = "config/mail/connection/password"
 )
 
+// General config keys of application
 const (
 	GeneralDomainKey                                = "config/general/domain"
 	GeneralHTTPListenerPortKey                      = "config/general/httpListenerPort"
 	GeneralRegisterMailVerificationTimeInSecondsKey = "config/general/register/mailVerificationTimeInSeconds"
+	GeneralRegisterHostVerificationMailAddressKey   = "config/general/register/hostVerificationMailAddress"
+	GeneralRegisterVerificationMailTextKey          = "config/general/register/verificationMailText"
+)
+
+// Registration password config keys
+const (
+	KeyRegistrationPasswordMinLength      = "/config/registration/password/minLength"
+	KeyRegistrationPasswordRequireUpper   = "/config/registration/password/requireUpper"
+	KeyRegistrationPasswordRequireLower   = "/config/registration/password/requireLower"
+	KeyRegistrationPasswordRequireNumber  = "/config/registration/password/requireNumber"
+	KeyRegistrationPasswordRequireSpecial = "/config/registration/password/requireSpecial"
 )
 
 // Environment variable keys
 const (
-	EnvKeyConsulAddress = "CONSUL_ADDRESS"
-	EnvKeyConsulScheme  = "CONSUL_SCHEME"
-	EnvKeyVaultAddr     = "VAULT_ADDR"
-	EnvKeyMountPath     = "VAULT_MOUNT_PATH"
-	EnvKeySecretPath    = "VAULT_SECRET_PATH"
-	EnvKeyVaultToken    = "VAULT_TOKEN"
+	EnvKeyConsulAddress  = "CONSUL_ADDRESS"
+	EnvKeyConsulScheme   = "CONSUL_SCHEME"
+	EnvKeyVaultAddr      = "VAULT_ADDR"
+	EnvKeyMountPath      = "VAULT_MOUNT_PATH"
+	EnvKeySecretPath     = "VAULT_SECRET_PATH"
+	EnvKeyVaultToken     = "VAULT_TOKEN"
+	EnvKeyAppEnvironment = "APP_ENV"
 )
 
+// Security configs keys fetched from vault
 const (
 	VaultJWTSecretKey        = "jwtSecret"
 	VaultJWTRefreshSecretKey = "jwtRefreshSecret"

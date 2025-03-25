@@ -22,16 +22,12 @@ type (
 	}
 )
 
-func NewVerificationRepository(redisClient *redis.Client, consul consul.ConsulService) RegistrationRepository {
-	cfg, err := consul.GetRegistrationConfig()
-	var expireTime = 24 * time.Hour
-	if err == nil {
-		expireTime = cfg.MailVerificationTimeInSeconds
-	}
+func NewRegistrationRepository(redisClient *redis.Client, consul consul.ConsulService) RegistrationRepository {
+	cfg := consul.GetRegistrationConfig()
 
 	return &registrationRepository{
 		redisClient:        redisClient,
-		tokenExpirySeconds: expireTime,
+		tokenExpirySeconds: cfg.MailVerificationTimeInSeconds,
 	}
 }
 
@@ -67,4 +63,4 @@ func (v *registrationRepository) DeleteToken(email string) error {
 	return nil
 }
 
-var VerificationRepositorySet = wire.NewSet(NewVerificationRepository)
+var RegistrationRepositoryProviderSet = wire.NewSet(NewRegistrationRepository)
