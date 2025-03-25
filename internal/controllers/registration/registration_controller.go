@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	registeration_verify_dto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration/verify"
-	custom_error "github.com/SilentPlaces/basicauth.git/internal/errors"
+	registerationverifydto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration/verify"
+	customerror "github.com/SilentPlaces/basicauth.git/internal/errors"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/http"
 	"github.com/google/wire"
 	"net/http"
 
 	"github.com/SilentPlaces/basicauth.git/internal/config"
-	registeration_dto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration"
+	registerationdto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration"
 	consulService "github.com/SilentPlaces/basicauth.git/internal/services/consul"
 	mailService "github.com/SilentPlaces/basicauth.git/internal/services/mail"
 	registrationService "github.com/SilentPlaces/basicauth.git/internal/services/registration"
@@ -60,7 +60,7 @@ func NewRegistrationController(
 // SignUp handles user registration and sends a verify email.
 func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Decode request body.
-	var requestData registeration_dto.SignUpRequestDTO
+	var requestData registerationdto.SignUpRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
 		return
@@ -100,7 +100,7 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 }
 
 // Validate the request data for email and password
-func validateRequestData(requestData registeration_dto.SignUpRequestDTO, passwordConfig *config.RegistrationPasswordConfig) error {
+func validateRequestData(requestData registerationdto.SignUpRequestDTO, passwordConfig *config.RegistrationPasswordConfig) error {
 	// Validate email.
 	if err := validation.ValidateEmail(requestData.Email); err != nil {
 		return fmt.Errorf("Email is not valid")
@@ -137,14 +137,14 @@ func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Requ
 }
 
 func (rc *registrationController) ResendVerification(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	requestData := registeration_verify_dto.RegisterVerifyDTO{}
+	requestData := registerationverifydto.RegisterVerifyDTO{}
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
 		return
 	}
 	token, err := rc.registrationService.ReloadToken(requestData.Email)
 	if err != nil {
-		if errors.Is(err, &custom_error.TokenGenerationCountError{}) {
+		if errors.Is(err, &customerror.TokenGenerationCountError{}) {
 			helpers.SendErrorResponse(w, http.StatusInternalServerError, "maximum number of attempts reached")
 		} else {
 			helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
