@@ -169,21 +169,25 @@ func (cs *consulService) GetRegistrationConfig() *config.RegistrationConfig {
 		constants.GeneralRegisterMailVerificationTimeInSecondsKey,
 		constants.GeneralRegisterHostVerificationMailAddressKey,
 		constants.GeneralRegisterVerificationMailTextKey,
+		constants.GeneralMaxVerificationMailCountInDay,
 	}
-	defaultTokenExpirySeconds := 600
-	tokenExpirySeconds := defaultTokenExpirySeconds
-
+	tokenExpirySeconds := 600
+	maxGenerationCount := 5
 	configMap, err := cs.getConfigForKeys(keys)
 	if err == nil {
 		if val, err := helpers.ParseInt("token expireTime", configMap[constants.GeneralRegisterMailVerificationTimeInSecondsKey]); err == nil {
 			tokenExpirySeconds = val
 		}
+		if val, err := helpers.ParseInt("count of max token generation", configMap[constants.GeneralMaxVerificationMailCountInDay]); err == nil {
+			maxGenerationCount = val
+		}
 	}
 
 	return &config.RegistrationConfig{
-		MailVerificationTimeInSeconds: time.Duration(tokenExpirySeconds),
-		HostVerificationMailAddress:   configMap[constants.GeneralRegisterHostVerificationMailAddressKey],
-		VerificationMailText:          configMap[constants.GeneralRegisterVerificationMailTextKey],
+		MailVerificationTimeInSeconds:        time.Duration(tokenExpirySeconds),
+		HostVerificationMailAddress:          configMap[constants.GeneralRegisterHostVerificationMailAddressKey],
+		VerificationMailText:                 configMap[constants.GeneralRegisterVerificationMailTextKey],
+		MaxVerificationMailGenerationInHours: int64(maxGenerationCount),
 	}
 }
 

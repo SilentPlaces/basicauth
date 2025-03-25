@@ -2,7 +2,10 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	registeration_verify_dto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration/verify"
+	custom_error "github.com/SilentPlaces/basicauth.git/internal/errors"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/http"
 	"github.com/google/wire"
 	"net/http"
@@ -21,6 +24,7 @@ type (
 	RegistrationController interface {
 		SignUp(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		VerifyMail(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
+		ResendVerification(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	registrationController struct {
@@ -53,7 +57,7 @@ func NewRegistrationController(
 	}
 }
 
-// SignUp handles user registration and sends a verification email.
+// SignUp handles user registration and sends a verify email.
 func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Decode request body.
 	var requestData registeration_dto.SignUpRequestDTO
@@ -68,20 +72,19 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	// Generate user and verification token
+	// Generate user and verify token
 	token, err := rc.registrationService.Signup(requestData.Email, requestData.Name, requestData.Password)
 	if err != nil {
-		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Error generating verification token")
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Error generating verify token")
 		return
 	}
 
-	// Generate verification URL and email body
-	//TODO replace with routes in final commits
-	verificationUrl := fmt.Sprintf("https://%s/registration/verify?%s=%s&%s=%s", rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
+	// Generate verify URL and email body
+	verificationUrl := fmt.Sprintf(verificationLink, rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
 	emailBody := fmt.Sprintf(rc.registrationConfig.VerificationMailText, verificationUrl)
 	emailSubject := fmt.Sprintf("Registration Verification Email at %s", rc.generalConfig.Domain)
 
-	// Send verification email
+	// Send verify email
 	if err := rc.mailService.SendVerificationEmail(
 		rc.registrationConfig.HostVerificationMailAddress,
 		requestData.Email,
@@ -111,7 +114,7 @@ func validateRequestData(requestData registeration_dto.SignUpRequestDTO, passwor
 	return nil
 }
 
-// VerifyMail handles email verification (not implemented yet).
+// VerifyMail handles email verify (not implemented yet).
 func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	//get params
 	email := ps.ByName(queryParamMailKey)
@@ -133,9 +136,45 @@ func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 }
 
+func (rc *registrationController) ResendVerification(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	requestData := registeration_verify_dto.RegisterVerifyDTO{}
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
+		return
+	}
+	token, err := rc.registrationService.ReloadToken(requestData.Email)
+	if err != nil {
+		if errors.Is(err, &custom_error.TokenGenerationCountError{}) {
+			helpers.SendErrorResponse(w, http.StatusInternalServerError, "maximum number of attempts reached")
+		} else {
+			helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		}
+		return
+	}
+	// Generate verify URL and email body
+	verificationUrl := fmt.Sprintf(verificationLink, rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
+	emailBody := fmt.Sprintf(rc.registrationConfig.VerificationMailText, verificationUrl)
+	emailSubject := fmt.Sprintf("Registration Verification Email at %s", rc.generalConfig.Domain)
+
+	// Send verify email
+	if err := rc.mailService.SendVerificationEmail(
+		rc.registrationConfig.HostVerificationMailAddress,
+		requestData.Email,
+		emailSubject,
+		emailBody,
+	); err != nil {
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error: Cannot send emails")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 const (
 	queryParamMailKey  = "email"
 	queryParamTokenKey = "token"
+	//not as the same as service route (/register/verify)and points to front-end page
+	verificationLink = "https://%s/registration/verify-user?%s=%s&%s=%s"
 )
 
 var RegistrationControllerProvider = wire.NewSet(NewRegistrationController)

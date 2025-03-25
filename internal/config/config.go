@@ -57,9 +57,10 @@ type RegistrationPasswordConfig struct {
 }
 
 type RegistrationConfig struct {
-	MailVerificationTimeInSeconds time.Duration
-	HostVerificationMailAddress   string
-	VerificationMailText          string
+	MailVerificationTimeInSeconds        time.Duration
+	HostVerificationMailAddress          string
+	VerificationMailText                 string
+	MaxVerificationMailGenerationInHours int64
 }
 
 var (

@@ -34,6 +34,7 @@ const (
 	GeneralRegisterMailVerificationTimeInSecondsKey = "config/general/register/mailVerificationTimeInSeconds"
 	GeneralRegisterHostVerificationMailAddressKey   = "config/general/register/hostVerificationMailAddress"
 	GeneralRegisterVerificationMailTextKey          = "config/general/register/verificationMailText"
+	GeneralMaxVerificationMailCountInDay            = "config/general/register/maxVerificationMailInCountInDay"
 )
 
 // Registration password config keys
