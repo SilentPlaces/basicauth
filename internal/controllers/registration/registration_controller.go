@@ -76,7 +76,8 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 	}
 
 	// Generate verification URL and email body
-	verificationUrl := fmt.Sprintf("https://%s/?%s=%s&%s=%s", rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
+	//TODO replace with routes in final commits
+	verificationUrl := fmt.Sprintf("https://%s/registration/verify?%s=%s&%s=%s", rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
 	emailBody := fmt.Sprintf(rc.registrationConfig.VerificationMailText, verificationUrl)
 	emailSubject := fmt.Sprintf("Registration Verification Email at %s", rc.generalConfig.Domain)
 
@@ -112,7 +113,24 @@ func validateRequestData(requestData registeration_dto.SignUpRequestDTO, passwor
 
 // VerifyMail handles email verification (not implemented yet).
 func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	http.Error(w, "Not implemented", http.StatusNotImplemented)
+	//get params
+	email := ps.ByName(queryParamMailKey)
+	token := ps.ByName(queryParamTokenKey)
+	//validate if token is correct
+	err := rc.registrationService.VerifyToken(email, token)
+	if err != nil {
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Verification Link is not valid")
+		return
+	}
+
+	//verify user
+	err = rc.registrationService.SetUserVerified(email)
+	if err != nil {
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 const (

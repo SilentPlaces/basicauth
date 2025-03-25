@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/SilentPlaces/basicauth.git/internal/models/models"
 	repository "github.com/SilentPlaces/basicauth.git/internal/repositories/registration"
@@ -9,12 +10,14 @@ import (
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 	"log"
+	"time"
 )
 
 type (
 	RegistrationService interface {
 		Signup(email string, name string, password string) (string, error) //sign up user and generate verification token
 		VerifyToken(email, token string) error
+		SetUserVerified(email string) error
 	}
 
 	registrationService struct {
@@ -88,6 +91,23 @@ func (s *registrationService) VerifyToken(email, token string) error {
 	if err != nil {
 		log.Printf("Error deleting token: %s", err.Error())
 	}
+	return nil
+}
+
+func (s *registrationService) SetUserVerified(email string) error {
+	user, err := s.userRepository.GetUserByMail(email)
+	if err != nil {
+		return err
+	}
+
+	user.VerifiedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	user.IsVerified = true
+
+	_, err = s.userRepository.UpdateUser(user)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -17,6 +17,7 @@ type UserRepository interface {
 	GetUserByID(id string) (*models.User, error)
 	GetUserByMail(mail string) (*models.User, error)
 	InsertUser(user models.User) (*models.User, error)
+	UpdateUser(user *models.User) (*models.User, error)
 	DeleteUserByID(id string) error
 }
 
@@ -101,6 +102,28 @@ func (ur *userRepository) DeleteUserByID(id string) error {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
 	return nil
+}
+
+func (ur *userRepository) UpdateUser(user *models.User) (*models.User, error) {
+	ctx, cancel := ur.newContext()
+	defer cancel()
+	query := "UPDATE users SET name=?, email=?, password=?, is_verified=?, verified_at=? WHERE id=?"
+	result, err := ur.db.ExecContext(ctx, query, user.Name, user.Email, user.Password, user.IsVerified, user.VerifiedAt, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check affected rows: %w", err)
+	}
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("no user found with id: %d", user.ID)
+	}
+	updatedUser, err := ur.GetUserByID(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve updated user: %w", err)
+	}
+	return updatedUser, nil
 }
 
 var UserRepositoryProviderSet = wire.NewSet(NewUserRepository)

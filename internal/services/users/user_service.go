@@ -10,6 +10,7 @@ import (
 type (
 	UserService interface {
 		GetUser(id string) (*dto.UserResponse, error)
+		GetUserByEmail(email string) (*dto.UserResponse, error)
 	}
 	userService struct {
 		UserRepo user.UserRepository
@@ -22,6 +23,14 @@ func NewUserService(userRepo user.UserRepository) UserService {
 
 func (s *userService) GetUser(id string) (*dto.UserResponse, error) {
 	data, err := s.UserRepo.GetUserByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapUserToUserResponse(data), nil
+}
+
+func (s *userService) GetUserByEmail(email string) (*dto.UserResponse, error) {
+	data, err := s.UserRepo.GetUserByMail(email)
 	if err != nil {
 		return nil, err
 	}
