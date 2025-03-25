@@ -137,7 +137,7 @@ func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Requ
 }
 
 func (rc *registrationController) ResendVerification(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	requestData := registerationverifydto.RegisterVerifyDTO{}
+	requestData := registerationverifydto.RegisterVerifyRequestDTO{}
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
 		return

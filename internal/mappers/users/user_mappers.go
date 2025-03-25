@@ -5,8 +5,8 @@ import (
 	"github.com/SilentPlaces/basicauth.git/internal/models/models"
 )
 
-func MapUserToUserResponse(u *models.User) *dto.UserResponse {
-	return &dto.UserResponse{
+func MapUserToUserResponse(u *models.User) *dto.UserResponseDTO {
+	return &dto.UserResponseDTO{
 		ID:   u.ID,
 		Name: u.Name,
 	}

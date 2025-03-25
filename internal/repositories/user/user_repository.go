@@ -72,7 +72,7 @@ func (ur *userRepository) InsertUser(user models.User) (*models.User, error) {
 	user.ID = uid.String()
 
 	// Hash the user's password
-	user.Password = helpers.HashToSHA1(user.Password)
+	user.Password = helpers.TextToSHA1(user.Password)
 	//insert into db
 	ctx, cancel := ur.newContext()
 	defer cancel()

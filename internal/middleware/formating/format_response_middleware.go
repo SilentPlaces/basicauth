@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/http"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strings"
@@ -31,7 +32,7 @@ func ResponseFormattingMiddleware(next httprouter.Handle) httprouter.Handle {
 				Message: strings.TrimSpace(cw.bodyBuffer.String()),
 			}
 			cw.bodyBuffer.Reset()
-			writeJSON(w, cw.statusCode, resp)
+			helpers.WriteJSON(w, cw.statusCode, resp)
 			return
 		}
 
@@ -47,7 +48,7 @@ func ResponseFormattingMiddleware(next httprouter.Handle) httprouter.Handle {
 						Message: "success",
 						Data:    data,
 					}
-					writeJSON(w, cw.statusCode, resp)
+					helpers.WriteJSON(w, cw.statusCode, resp)
 					return
 				}
 				// If unmarshalling fails, fall back to sending the original response.
@@ -62,21 +63,12 @@ func ResponseFormattingMiddleware(next httprouter.Handle) httprouter.Handle {
 				Code:    cw.statusCode,
 				Message: "success",
 			}
-			writeJSON(w, cw.statusCode, resp)
+			helpers.WriteJSON(w, cw.statusCode, resp)
 			return
 		}
 
 		// Default: pass through the original response codes including 301
 		w.WriteHeader(cw.statusCode)
 		_, _ = w.Write(cw.bodyBuffer.Bytes())
-	}
-}
-
-// writeJSON sets the Content-Type header, writes the status code, and encodes the response as JSON.
-func writeJSON(w http.ResponseWriter, statusCode int, resp general_reponse_dto.Response) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

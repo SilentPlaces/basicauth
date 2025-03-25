@@ -1,5 +1,5 @@
 package registeration_verify_dto
 
-type RegisterVerifyDTO struct {
+type RegisterVerifyRequestDTO struct {
 	Email string `json:"email"`
 }
