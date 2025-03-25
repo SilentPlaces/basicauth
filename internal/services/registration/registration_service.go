@@ -54,7 +54,7 @@ func (s *registrationService) Signup(email string, name string, password string)
 		return "", fmt.Errorf("error checking token generation limit: %w", err)
 	}
 	if !canGenerate {
-		return "", custom_error.NewTokenGenerationError("500", "you cannot generate more than 5 tokens in the past 24 hours")
+		return "", custom_error.NewTokenGenerationError("you cannot generate more than 5 tokens in the past 24 hours")
 	}
 
 	// Insert new user
@@ -147,7 +147,7 @@ func (s *registrationService) ReloadToken(mail string) (string, error) {
 		return "", fmt.Errorf("error checking token generation limit: %w", err)
 	}
 	if !canGenerate {
-		return "", custom_error.NewTokenGenerationError("500", "you cannot generate more than 5 tokens in the past 24 hours")
+		return "", custom_error.NewTokenGenerationError("you cannot generate more than 5 tokens in the past 24 hours")
 	}
 	// Generate a new token
 	token, err := helpers.GenerateRandomString(64)
