@@ -79,7 +79,11 @@ func (u *userController) Login(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 	//send final
-	helpers.WriteJSON(w, http.StatusOK, &login_dto.LoginResponseDTO{User: userData, Token: token.AccessToken, RefreshToken: token.RefreshToken})
+	helpers.WriteJSON(w, http.StatusOK, &login_dto.LoginResponseDTO{
+		User:         userData,
+		Token:        token.AccessToken,
+		RefreshToken: token.RefreshToken,
+	})
 }
 
 var UserControllerProviderSet = wire.NewSet(NewUserController)
