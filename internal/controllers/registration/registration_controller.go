@@ -96,7 +96,7 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 	}
 
 	// Return success response
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Validate the request data for email and password
