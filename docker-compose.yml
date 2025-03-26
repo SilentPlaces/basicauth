@@ -1,0 +1,180 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vault:
+        condition: service_started
+      vault-init:
+        condition: service_completed_successfully
+      consul-config:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: "development"
+      # DEVELOPMENT PURPOSE ONLY - DO NOT DO THIS IN PRODUCTION
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root"
+      VAULT_MOUNT_PATH: "secret"
+      VAULT_SECRET_PATH: "jwt"
+    volumes:
+      - .:/app
+  mysql:
+    image: mysql:8.0.36
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: authentication_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    image: redis:7.0.12
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consul:
+    image: hashicorp/consul:1.16.1
+    restart: always
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap -ui -client=0.0.0.0"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8500/v1/status/leader" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consul-config:
+    image: hashicorp/consul:1.16.1
+    depends_on:
+      - consul
+    environment:
+      - CONSUL_HTTP_ADDR=http://consul:8500
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        sleep 5 && \
+        # MySQL Connection settings && \
+        consul kv put config/mysql/connection/host mysql && \
+        consul kv put config/mysql/connection/user user && \
+        consul kv put config/mysql/connection/port 3306 && \
+        consul kv put config/mysql/connection/password password && \
+        consul kv put config/mysql/connection/db authentication_db && \
+        consul kv put config/mysql/connection/maxLifeTime 180 && \
+        consul kv put config/mysql/connection/idleConnections 10 && \
+        consul kv put config/mysql/connection/maxOpenConnections 10 && \
+        \
+        # Redis connection details && \
+        consul kv put config/redis/connection/host redis && \
+        consul kv put config/redis/connection/port 6379 && \
+        consul kv put config/redis/connection/password '' && \
+        \
+        # SMTP server configuration && \
+        consul kv put config/mail/connection/host mailhog && \
+        consul kv put config/mail/connection/port 1025 && \
+        consul kv put config/mail/connection/username '' && \
+        consul kv put config/mail/connection/password '' && \
+        \
+        # General configuration && \
+        consul kv put config/general/domain 'localhost' && \
+        consul kv put config/general/httpListenerPort 8080 && \
+        consul kv put config/general/register/maxVerificationMailInCountInDay 5 && \
+        consul kv put config/general/register/mailVerificationTimeInSeconds 6000 && \
+        consul kv put config/general/register/hostVerificationMailAddress 'armin@testlocalhost.com' && \
+        consul kv put config/general/register/verificationMailText "<html><body><h2>Welcome to Our Service!</h2><p>Please click the link below to verify your email address:</p><p><a href=\"%s\">Verify Your Email</a></p><p>If you didn\'t request this, you can ignore this email.</p></body></html>" && /
+        \
+        # Registration password configuration && \
+        consul kv put config/registration/password/minLength 8 && \
+        consul kv put config/registration/password/requireUpper false && \
+        consul kv put config/registration/password/requireLower false && \
+        consul kv put config/registration/password/requireNumber false && \
+        consul kv put config/registration/password/requireSpecial false
+
+
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "root"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    command: "server -dev -dev-root-token-id=root"
+    volumes:
+      - vault-data:/vault/file
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-s", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:8200/v1/sys/health", "-m", "15" ]
+      interval: 15s
+      timeout: 15s
+      retries: 30
+
+  vault-init:
+    image: hashicorp/vault:latest
+    depends_on:
+      - vault
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "Initializing Vault with jwt tokens..."
+        sleep 2
+        vault login root
+        vault kv put secret/jwt jwtSecret="jwt_secret_value" jwtRefreshSecret="jwt_refresh_token_value"
+        echo "Vault initialized with jwt secrets."
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root"
+    restart: "no"
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 5s
+      timeout: 2s
+      retries: 1
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI port
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8025" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql-data:
+  vault-data:
+  redis_data:
