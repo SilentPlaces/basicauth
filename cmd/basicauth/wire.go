@@ -67,8 +67,8 @@ func InitializeUserService() (userService.UserService, error) {
 // InitializeUserController initializes a UserController.
 func InitializeUserController() (userController.UserController, error) {
 	wire.Build(
-		InitializeUserService,
 		userController.UserControllerProviderSet,
+		InitializeUserService,
 		InitializeAuthService,
 	)
 	return nil, nil

@@ -2,7 +2,9 @@ package controller
 
 import (
 	"encoding/json"
-	login_dto "github.com/SilentPlaces/basicauth.git/internal/dto/login"
+	"github.com/SilentPlaces/basicauth.git/internal/dto/auth/login"
+	authdto "github.com/SilentPlaces/basicauth.git/internal/dto/auth/refresh_token"
+	mapper "github.com/SilentPlaces/basicauth.git/internal/mappers/users"
 	middleware "github.com/SilentPlaces/basicauth.git/internal/middleware/auth"
 	authService "github.com/SilentPlaces/basicauth.git/internal/services/auth"
 	userService "github.com/SilentPlaces/basicauth.git/internal/services/users"
@@ -17,6 +19,7 @@ type (
 	UserController interface {
 		GetUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
+		RefreshToken(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	}
 
 	userController struct {
@@ -37,26 +40,20 @@ func (u *userController) GetUser(w http.ResponseWriter, r *http.Request, _ httpr
 	// Extract user id from the request context.
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok {
-		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		helpers.SendErrorResponse(w, http.StatusUnauthorized, "User ID not found ")
 		return
 	}
 	response, err := u.userService.GetUser(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	helpers.WriteJSON(w, http.StatusOK, response)
 }
 
 func (u *userController) Login(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	//Get data
-	requestData := login_dto.LoginRequestDTO{}
+	requestData := login.LoginRequestDTO{}
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Bad request")
 		return
@@ -66,7 +63,7 @@ func (u *userController) Login(w http.ResponseWriter, r *http.Request, _ httprou
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Bad request")
 		return
 	}
-	//verify login
+	//resend_verification auth
 	userData, err := u.userService.VerifyLogin(requestData.Email, requestData.Password)
 	if err != nil {
 		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Wrong Email or Password")
@@ -79,11 +76,26 @@ func (u *userController) Login(w http.ResponseWriter, r *http.Request, _ httprou
 		return
 	}
 	//send final
-	helpers.WriteJSON(w, http.StatusOK, &login_dto.LoginResponseDTO{
+	helpers.WriteJSON(w, http.StatusOK, &login.LoginResponseDTO{
 		User:         userData,
 		Token:        token.AccessToken,
 		RefreshToken: token.RefreshToken,
 	})
+}
+
+func (u *userController) RefreshToken(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var requestData authdto.RefreshTokenReqDto
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		helpers.SendErrorResponse(w, http.StatusBadRequest, "Bad request")
+		return
+	}
+	tokens, err := u.authService.RefreshToken(requestData.RefreshToken)
+	if err != nil {
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
+	}
+	mappedResponse := mapper.MapTokenToRefreshTokenResDTO(tokens)
+	helpers.WriteJSON(w, http.StatusOK, &mappedResponse)
 }
 
 var UserControllerProviderSet = wire.NewSet(NewUserController)

@@ -78,7 +78,8 @@ func InitializeUserController() (controller.UserController, error) {
 	if err != nil {
 		return nil, err
 	}
-	userController := controller.NewUserController(userService)
+	authService := InitializeAuthService()
+	userController := controller.NewUserController(userService, authService)
 	return userController, nil
 }
 
