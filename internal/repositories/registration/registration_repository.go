@@ -39,7 +39,9 @@ func NewRegistrationRepository(redisClient *redis.Client, consul consul.ConsulSe
 func (rp *registrationRepository) SetVerifyToken(mail string, token string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err := rp.redisClient.Set(ctx, prefixTokenKey+mail, token, rp.registrationConfig.MailVerificationTimeInSeconds).Err()
+	key := prefixTokenKey + mail
+	fmt.Printf("SetVerifyToken key=%s, %s \n", key, rp.registrationConfig.MailVerificationTimeInSeconds)
+	err := rp.redisClient.Set(ctx, key, token, rp.registrationConfig.MailVerificationTimeInSeconds).Err()
 	if err != nil {
 		log.Printf("Failed to set registration token for mail '%s': %v", mail, err)
 		return err
@@ -120,7 +122,7 @@ func (rp *registrationRepository) CanGenerateToken(email string) (bool, error) {
 
 const (
 	prefixTokenKey       = "token-"
-	prefixVerifyCountKey = "verify-count-"
+	prefixVerifyCountKey = "resend_verification-count-"
 )
 
 var RegistrationRepositoryProviderSet = wire.NewSet(NewRegistrationRepository)

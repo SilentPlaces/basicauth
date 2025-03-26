@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	registerationverifydto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration/verify"
+	resendVerification "github.com/SilentPlaces/basicauth.git/internal/dto/registeration/resend_verification"
+	verify_mail_req_dto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration/verify"
 	customerror "github.com/SilentPlaces/basicauth.git/internal/errors"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/http"
 	"github.com/google/wire"
 	"net/http"
+	"net/url"
 
 	"github.com/SilentPlaces/basicauth.git/internal/config"
 	registerationdto "github.com/SilentPlaces/basicauth.git/internal/dto/registeration"
@@ -57,10 +59,10 @@ func NewRegistrationController(
 	}
 }
 
-// SignUp handles user registration and sends a verify email.
+// SignUp handles user registration and sends a resend_verification email.
 func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// Decode request body.
-	var requestData registerationdto.SignUpRequestDTO
+	var requestData registerationdto.RegistrationRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
 		return
@@ -72,19 +74,19 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	// Generate user and verify token
+	// Generate user and resend_verification token
 	token, err := rc.registrationService.Signup(requestData.Email, requestData.Name, requestData.Password)
 	if err != nil {
-		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Error generating verify token")
+		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Error generating resend_verification token")
 		return
 	}
 
-	// Generate verify URL and email body
-	verificationUrl := fmt.Sprintf(verificationLink, rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
+	// Generate resend_verification URL and email body
+	verificationUrl := fmt.Sprintf(verificationLink, rc.generalConfig.Domain, queryParamTokenKey, url.QueryEscape(token), queryParamMailKey, url.QueryEscape(requestData.Email))
 	emailBody := fmt.Sprintf(rc.registrationConfig.VerificationMailText, verificationUrl)
 	emailSubject := fmt.Sprintf("Registration Verification Email at %s", rc.generalConfig.Domain)
 
-	// Send verify email
+	// Send resend_verification email
 	if err := rc.mailService.SendVerificationEmail(
 		rc.registrationConfig.HostVerificationMailAddress,
 		requestData.Email,
@@ -100,7 +102,7 @@ func (rc *registrationController) SignUp(w http.ResponseWriter, r *http.Request,
 }
 
 // Validate the request data for email and password
-func validateRequestData(requestData registerationdto.SignUpRequestDTO, passwordConfig *config.RegistrationPasswordConfig) error {
+func validateRequestData(requestData registerationdto.RegistrationRequestDTO, passwordConfig *config.RegistrationPasswordConfig) error {
 	// Validate email.
 	if err := validation.ValidateEmail(requestData.Email); err != nil {
 		return fmt.Errorf("Email is not valid")
@@ -114,20 +116,25 @@ func validateRequestData(requestData registerationdto.SignUpRequestDTO, password
 	return nil
 }
 
-// VerifyMail handles email verify (not implemented yet).
+// VerifyMail handles email resend_verification (not implemented yet).
 func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	//get params
-	email := ps.ByName(queryParamMailKey)
-	token := ps.ByName(queryParamTokenKey)
+	//get data
+	var requestData verify_mail_req_dto.VerifyMailReqDTO
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
+		return
+	}
+	mail, _ := url.QueryUnescape(requestData.Mail)
+	token, _ := url.QueryUnescape(requestData.Token)
 	//validate if token is correct
-	err := rc.registrationService.VerifyToken(email, token)
+	err := rc.registrationService.VerifyToken(mail, token)
 	if err != nil {
 		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Verification Link is not valid")
 		return
 	}
 
-	//verify user
-	err = rc.registrationService.SetUserVerified(email)
+	//resend_verification user
+	err = rc.registrationService.SetUserVerified(mail)
 	if err != nil {
 		helpers.SendErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
@@ -137,7 +144,7 @@ func (rc *registrationController) VerifyMail(w http.ResponseWriter, r *http.Requ
 }
 
 func (rc *registrationController) ResendVerification(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	requestData := registerationverifydto.RegisterVerifyRequestDTO{}
+	requestData := resendVerification.ResendVerificationRequestDTO{}
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		helpers.SendErrorResponse(w, http.StatusBadRequest, "Invalid request format")
 		return
@@ -151,12 +158,12 @@ func (rc *registrationController) ResendVerification(w http.ResponseWriter, r *h
 		}
 		return
 	}
-	// Generate verify URL and email body
-	verificationUrl := fmt.Sprintf(verificationLink, rc.generalConfig.Domain, queryParamTokenKey, token, queryParamMailKey, requestData.Email)
+	// Generate resend_verification URL and email body
+	verificationUrl := fmt.Sprintf(verificationLink, rc.generalConfig.Domain, queryParamTokenKey, url.QueryEscape(token), queryParamMailKey, url.QueryEscape(requestData.Email))
 	emailBody := fmt.Sprintf(rc.registrationConfig.VerificationMailText, verificationUrl)
 	emailSubject := fmt.Sprintf("Registration Verification Email at %s", rc.generalConfig.Domain)
 
-	// Send verify email
+	// Send resend_verification email
 	if err := rc.mailService.SendVerificationEmail(
 		rc.registrationConfig.HostVerificationMailAddress,
 		requestData.Email,
@@ -173,7 +180,7 @@ func (rc *registrationController) ResendVerification(w http.ResponseWriter, r *h
 const (
 	queryParamMailKey  = "email"
 	queryParamTokenKey = "token"
-	//not as the same as service route (/register/verify)and points to front-end page
+	//not as the same as service route (/register/resend_verification)and points to front-end page
 	verificationLink = "https://%s/registration/verify-user?%s=%s&%s=%s"
 )
 

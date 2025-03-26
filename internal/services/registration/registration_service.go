@@ -36,14 +36,14 @@ func NewUserRegistrationService(verificationRepo repository.RegistrationReposito
 	}
 }
 
-// Signup handles user registration, checks if the email exists, and generates a verify token
+// Signup handles user registration, checks if the email exists, and generates a resend_verification token
 func (s *registrationService) Signup(email string, name string, password string) (string, error) {
 	// Check if user already exists by email
 	existingUser, err := s.userRepository.GetUserByMail(email)
 	if err != nil {
 		logError("Error getting user by mail: %v", err)
 		if existingUser != nil {
-			return "", errors.New("this email is already in use, please login")
+			return "", errors.New("this email is already in use, please auth")
 		}
 		return "", err
 	}
@@ -68,7 +68,7 @@ func (s *registrationService) Signup(email string, name string, password string)
 		return "", err
 	}
 
-	// Generate and save verify token
+	// Generate and save resend_verification token
 	token, err := generateToken()
 	if err != nil {
 		// Rollback user insert on failure
@@ -80,7 +80,7 @@ func (s *registrationService) Signup(email string, name string, password string)
 	if err != nil {
 		// Rollback user insert on failure
 		_ = s.userRepository.DeleteUserByID(dbUser.ID)
-		logError("Error setting verify token: %v", err)
+		logError("Error setting resend_verification token: %v", err)
 		return "", err
 	}
 
@@ -100,7 +100,7 @@ func (s *registrationService) VerifyToken(email, token string) error {
 		return errors.New("token does not exist")
 	}
 	if err != nil {
-		logError("Error getting verify token: %v", err)
+		logError("Error getting resend_verification token: %v", err)
 		return err
 	}
 
@@ -108,7 +108,7 @@ func (s *registrationService) VerifyToken(email, token string) error {
 		return errors.New("token does not match")
 	}
 
-	// Delete the token after verify
+	// Delete the token after resend_verification
 	err = s.registrationRepository.DeleteToken(email)
 	if err != nil {
 		logError("Error deleting token: %v", err)
@@ -121,7 +121,7 @@ func (s *registrationService) VerifyToken(email, token string) error {
 	return nil
 }
 
-// SetUserVerified sets the user's verify status to true
+// SetUserVerified sets the user's resend_verification status to true
 func (s *registrationService) SetUserVerified(email string) error {
 	user, err := s.userRepository.GetUserByMail(email)
 	if err != nil {
@@ -134,12 +134,12 @@ func (s *registrationService) SetUserVerified(email string) error {
 
 	_, err = s.userRepository.UpdateUser(user)
 	if err != nil {
-		logError("Error updating user verify status: %v", err)
+		logError("Error updating user resend_verification status: %v", err)
 	}
 	return err
 }
 
-// ReloadToken generates a new verify token and resets it
+// ReloadToken generates a new resend_verification token and resets it
 func (s *registrationService) ReloadToken(mail string) (string, error) {
 	// Check if the user has already generated too many tokens in pas 24 hours
 	canGenerate, err := s.registrationRepository.CanGenerateToken(mail)

@@ -1,4 +1,4 @@
-package login_dto
+package login
 
 type LoginRequestDTO struct {
 	Email    string `json:"email"`
