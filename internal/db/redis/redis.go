@@ -3,10 +3,11 @@ package redis
 import (
 	"context"
 	"fmt"
+	"time"
+
 	consulService "github.com/SilentPlaces/basicauth.git/internal/services/consul"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 func NewRedis(consul consulService.ConsulService) (*redis.Client, error) {
