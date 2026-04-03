@@ -55,6 +55,8 @@ const (
 	EnvKeySecretPath     = "VAULT_SECRET_PATH"
 	EnvKeyVaultToken     = "VAULT_TOKEN"
 	EnvKeyAppEnvironment = "APP_ENV"
+	EnvKeyLogLevel       = "LOG_LEVEL"
+	EnvKeyLogFormat      = "LOG_FORMAT"
 )
 
 // Security configs keys fetched from vault

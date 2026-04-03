@@ -16,6 +16,8 @@ type AppConfig struct {
 	ConsulAddress string
 	ConsulScheme  string
 	Environment   string
+	LogLevel      string
+	LogFormat     string
 }
 
 // Configuration Structs
@@ -78,6 +80,19 @@ func LoadConsulConfig() *AppConfig {
 			ConsulAddress: os.Getenv(constants.EnvKeyConsulAddress),
 			ConsulScheme:  os.Getenv(constants.EnvKeyConsulScheme),
 			Environment:   os.Getenv(constants.EnvKeyAppEnvironment),
+			LogLevel:      os.Getenv(constants.EnvKeyLogLevel),
+			LogFormat:     os.Getenv(constants.EnvKeyLogFormat),
+		}
+
+		if appConfig.LogLevel == "" {
+			appConfig.LogLevel = "info"
+		}
+		if appConfig.LogFormat == "" {
+			if appConfig.Environment == "production" {
+				appConfig.LogFormat = "json"
+			} else {
+				appConfig.LogFormat = "pretty"
+			}
 		}
 
 		if appConfig.ConsulAddress == "" || appConfig.ConsulScheme == "" {

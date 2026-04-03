@@ -3,9 +3,10 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"time"
+
 	consul "github.com/SilentPlaces/basicauth.git/internal/services/consul"
 	helpers "github.com/SilentPlaces/basicauth.git/pkg/helper/convertor"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/wire"

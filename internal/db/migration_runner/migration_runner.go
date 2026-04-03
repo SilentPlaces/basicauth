@@ -2,6 +2,7 @@ package migration_runner
 
 import (
 	"database/sql"
+
 	"github.com/SilentPlaces/basicauth.git/pkg/constants"
 	"github.com/google/wire"
 	"github.com/pressly/goose/v3"

@@ -28,7 +28,7 @@ services:
     volumes:
       - .:/app
   mysql:
-    image: mysql:8.0.36
+    image: mysql:8.0
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: example
@@ -47,7 +47,7 @@ services:
 
 
   redis:
-    image: redis:7.0.12
+    image: redis:8.2.2
     restart: always
     ports:
       - "6379:6379"
@@ -60,7 +60,7 @@ services:
       retries: 5
 
   consul:
-    image: hashicorp/consul:1.16.1
+    image: hashicorp/consul:1.15.4
     restart: always
     ports:
       - "8500:8500"
@@ -73,7 +73,7 @@ services:
       retries: 5
 
   consul-config:
-    image: hashicorp/consul:1.16.1
+    image: hashicorp/consul:1.15.4
     depends_on:
       - consul
     environment:
