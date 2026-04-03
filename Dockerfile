@@ -1,10 +1,12 @@
-FROM golang:1.23.4 AS builder
+FROM golang:1.25.0 AS builder
 
 # Set the working directory in the container
 WORKDIR /app
 
 #installing netcat, i used it in entrypoint.sh (nc -z mysql 3306)
 RUN apt-get update && apt-get install -y netcat-openbsd
+
+ENV GOPROXY=https://goproxy.io,direct
 
 # Install air and goose
 RUN go install github.com/air-verse/air@latest
